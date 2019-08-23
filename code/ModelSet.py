@@ -130,7 +130,7 @@ class PolaritiesClassifier:
                        validation_split=0.1,
                       )
             
-    def predict(self, content_data, aspect_data, option_data, id2polarities):
+    def predict(self, content_data, aspect_data, option_data):
         output_result = []
         self.model.load_weights("../model/polarity.w")
         content_data = pad_sequences(content_data, self.content_max_len, padding = 'post', truncating='post')

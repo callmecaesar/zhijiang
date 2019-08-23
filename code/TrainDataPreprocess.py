@@ -2,35 +2,17 @@ import jieba
 from collections import Counter
 import json
 import pandas as pd
-train_reviews_path = '../data/Train_reviews.csv'
-train_labels_path = '../data/Train_labels.csv'
+
 class ProcessData:
     def __init__(self, train_reviews_path, train_labels_path):
         self.data_save_path_root = '../data/'
         print('数据预处理...')
-        train_reviews = pd.read_csv(train_reviews_path)
+        self.train_reviews = pd.read_csv(train_reviews_path)
         train_labels = pd.read_csv(train_labels_path)
-        self.table = train_reviews.join(train_labels.set_index('id'), how='right', on='id')
+        self.table = self.train_reviews.join(train_labels.set_index('id'), how='right', on='id')
         self.groups = self.table.groupby('id')
         print('数据表整合完成...')
-        self.chunk_tags = ['B_AT', 'I_AT', 'O', 'B_OT', 'I_OT']
         self.Categories2id, self.id2Categories = self._get_Categories()
-        
-    def _reshape_data(self, mode, cut):
-        """
-            mode ->  'all' : 标注在一起
-                     ->  'at' : AspectTerm only
-                     ->  'ot' : OpinionTerms only
-        """
-        if mode == 'all':
-            chunk_tags = self.chunk_tags
-        elif mode == 'at':
-            chunk_tags = self.chunk_tags[:3]
-        elif mode == 'ot':
-            chunk_tags = self.chunk_tags[2:]
-            
-        self.chunk2id = {item: _id for _id, item in enumerate(chunk_tags)}
-        self.id2chunk = {v: k for k, v in self.chunk2id}
         
     def _get_Categories(self):
         Categories = set(list(self.table['Categories']))
@@ -43,15 +25,12 @@ class ProcessData:
     def _save_data(self, save_file, cut):
         ner_data = []
         ner_label = []
-#         category = []
-#         polarity = []
+
         with open(save_file, 'w') as f:
-            for index, g in self.groups:
+            for _, g in self.groups:
                 Reviews = list(g.Reviews)
                 AspectTerms = list(g.AspectTerms)
                 OpinionTerms = list(g.OpinionTerms)
-                Categories = list(g.Categories)
-                Polarities = list(g.Polarities)
                 A_start = list(g.A_start)
                 A_end = list(g.A_end)
                 O_start = list(g.O_start)
@@ -130,18 +109,17 @@ class ProcessData:
                     
                 ner_data.append(sentence)
                 ner_label.append(temp_chunk_list)
-#                 category.append()
-#                 polarity.append()
+
         ner_data = json.dumps(ner_data, ensure_ascii=False)
         ner_label = json.dumps(ner_label, ensure_ascii=False)
         
         return ner_data, ner_label
             
             
-    def _save_vcab(self, thred=1):
+    def _save_vcab(self, thred=0):
         word_counts = {}
         char_counts = {}
-        for index, g in self.groups:
+        for _, g in self.groups:
             Review = list(g.Reviews)[0]
             words = jieba.lcut(Review)
             
@@ -204,10 +182,10 @@ class ProcessData:
         with open(self.data_save_path_root + 'ner_char_label.json', 'w', encoding='utf8') as fw:
             fw.write(ner_char_label)
             
-        self._get_category_polarity(char2id, word2id, self.Categories2id)
+        self._get_category_polarity(char2id, word2id)
         print('数据生成与存储完毕！')
         
-    def _get_category_polarity(self, char2id, word2id, Categories2id):
+    def _get_category_polarity(self, char2id, word2id):
         #Reviews	AspectTerms	A_start	A_end	OpinionTerms	O_start	O_end	Categories	Polarities
         
         content_word = []
@@ -243,14 +221,14 @@ class ProcessData:
             else:
                 opinion_word.append([word2id.get(w) for w in jieba.lcut(OpinionTerms)])
                 opinion_char.append([char2id.get(w) for w in OpinionTerms])
-            category.append(Categories2id.get(Categories))
+            category.append(self.Categories2id.get(Categories))
             if Polarities == '正面':
                 polarity.append(1)
             else:
                 polarity.append(0)
                 
-        word_dict = {'content': content_word, 'aspect': aspect_word, 'opinion': opinion_word, 'polarity': polarity, 'category': category, 'id2categories':self.id2Categories}
-        char_dict = {'content': content_char, 'aspect': aspect_char, 'opinion': opinion_char, 'polarity': polarity, 'category': category, 'id2categories':self.id2Categories}
+        word_dict = {'content': content_word, 'aspect': aspect_word, 'opinion': opinion_word, 'polarity': polarity, 'category': category, 'id2categories':self.id2Categories, 'categories2id': self.Categories2id}
+        char_dict = {'content': content_char, 'aspect': aspect_char, 'opinion': opinion_char, 'polarity': polarity, 'category': category, 'id2categories':self.id2Categories, 'categories2id': self.Categories2id}
         
         word_dict = json.dumps(word_dict)
         char_dict = json.dumps(char_dict)
