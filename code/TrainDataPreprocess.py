@@ -206,21 +206,21 @@ class ProcessData:
             Categories = row['Categories']
             Polarities = row['Polarities']
             
-            content_word.append([word2id.get(w) for w in jieba.lcut(Reviews)])
-            content_char.append([char2id.get(w) for w in Reviews])
+            content_word.append([word2id.get(w,1) for w in jieba.lcut(Reviews)])
+            content_char.append([char2id.get(w,1) for w in Reviews])
             if AspectTerms == '_':
                 aspect_word.append([0])
                 aspect_char.append([0])
             else:
-                aspect_word.append([word2id.get(w) for w in jieba.lcut(AspectTerms)])
-                aspect_char.append([char2id.get(w) for w in AspectTerms])
+                aspect_word.append([word2id.get(w,1) for w in jieba.lcut(AspectTerms)])
+                aspect_char.append([char2id.get(w,1) for w in AspectTerms])
                 
             if OpinionTerms == '_':
                 opinion_word.append([0])
                 opinion_char.append([0])
             else:
-                opinion_word.append([word2id.get(w) for w in jieba.lcut(OpinionTerms)])
-                opinion_char.append([char2id.get(w) for w in OpinionTerms])
+                opinion_word.append([word2id.get(w,1) for w in jieba.lcut(OpinionTerms)])
+                opinion_char.append([char2id.get(w,1) for w in OpinionTerms])
             category.append(self.Categories2id.get(Categories))
             if Polarities == '正面':
                 polarity.append(1)

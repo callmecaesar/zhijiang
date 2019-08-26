@@ -87,9 +87,11 @@ class GenSubmit:
         result_OpinionTerms = []
         result_O_start = []
         result_O_end = []
-        for i in range(len(sent_list)):
+        
+        for i in range(len(id_list)):
+            wrote = False
             a_list, o_list = self._get_entity_list(words_list[i], chunk_list[i])
-            if len(a_list) == 0 and len(o_list) == 0:
+            if len(a_list) == 0 and len(o_list) == 0:  #如果a和o都没找到
                 result_id.append(id_list[i])
                 result_Reviews.append(sent_list[i])
                 result_AspectTerms.append('_')
@@ -98,8 +100,8 @@ class GenSubmit:
                 result_A_end.append(' ')
                 result_O_start.append(' ')
                 result_O_end.append(' ')
-                
-            elif len(a_list) == 0:
+                wrote = True
+            elif len(a_list) == 0:                     #如果a没找到，o找到
                 for o in o_list:
                     o = str(o)
                     if o not in sent_list[i]:
@@ -112,8 +114,8 @@ class GenSubmit:
                     result_A_end.append(' ')
                     result_O_start.append(sent_list[i].index(o))
                     result_O_end.append(sent_list[i].index(o) + len(o))
-                    
-            elif len(o_list) == 0:
+                    wrote = True
+            elif len(o_list) == 0:                      #如果o没找到，a找到
                 for a in a_list:
                     a = str(a)
                     if a not in sent_list[i]:
@@ -126,7 +128,8 @@ class GenSubmit:
                     result_A_end.append(sent_list[i].index(a) + len(a))
                     result_O_start.append(' ')
                     result_O_end.append(' ')
-            else:
+                    wrote = True
+            else:                                       #如果a和o都找到了
                 new_sent = self._get_processed_sent(sent_list[i])
                 sent_parts = new_sent.split('$$')
                 recorded_a = []
@@ -150,7 +153,7 @@ class GenSubmit:
                             result_A_end.append(sent_list[i].index(a) + len(a))
                             result_O_start.append(sent_list[i].index(o))
                             result_O_end.append(sent_list[i].index(o) + len(o))
-                            
+                            wrote = True
                             recorded_a.append(ai)
                             recorded_o.append(oi)
                 for ai in range(len(a_list)):
@@ -168,7 +171,8 @@ class GenSubmit:
                         result_A_end.append(sent_list[i].index(a) + len(a))
                         result_O_start.append(' ')
                         result_O_end.append(' ')
-                        
+                        wrote = True
+
                 for oi in range(len(o_list)):
                     if oi not in recorded_o:
                         o = o_list[oi]
@@ -181,11 +185,25 @@ class GenSubmit:
                         result_OpinionTerms.append(o)
                         result_A_start.append(' ')
                         result_A_end.append(' ')
-                        # print(o)
-                        # print(sent_list[i])
                         result_O_start.append(sent_list[i].index(o))
                         result_O_end.append(sent_list[i].index(o) + len(o))
-                        
+                        wrote = True
+            if not wrote:
+                print(id_list[i])
+                print(sent_list[i])
+                print(a_list)
+                print(o_list)
+                print('********************')
+                result_id.append(id_list[i])
+                result_Reviews.append(sent_list[i])
+                result_AspectTerms.append('_')
+                result_OpinionTerms.append('_')
+                result_A_start.append(' ')
+                result_A_end.append(' ')
+                result_O_start.append(' ')
+                result_O_end.append(' ')
+
+
         ret_table = pd.DataFrame()
         ret_table['id'] = result_id
         ret_table['Reviews'] = result_Reviews
